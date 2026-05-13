@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2c5f2e">
+<title>くぬぎ山駅 → 市川動植物園 チェックポイントマップ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --green:      #2c5f2e;
+    --green-light:#edf7e6;
+    --blue:       #4a7fc1;
+    --blue-light: #e8f0fb;
+    --red:        #d63d2a;
+    --red-light:  #fdecea;
+    --orange:     #e07830;
+    --orange-light:#fff4e0;
+    --pink:       #c060a0;
+    --pink-light: #fde8f4;
+    --purple:     #9060c0;
+    --purple-light:#f3eaff;
+    --gray:       #777777;
+    --gray-light: #f2f2f2;
+    --dkgreen:    #2e8b57;
+    --dkgreen-lt: #e4f5ea;
+    --goal:       #e87d2e;
+    --goal-light: #fff3e0;
+    --gold:       #d4a820;
+    --gold-light: #fffbe6;
+    --bg:         #f7f5ee;
+    --text:       #222211;
+    --radius:     12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: var(--green);
+    color: white;
+    padding: 18px 16px 14px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    line-height: 1.4;
+  }
+  header p {
+    font-size: 11px;
+    opacity: .85;
+    margin-top: 4px;
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-wrap {
+    background: white;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #e0ddd0;
+    position: sticky;
+    top: 72px;
+    z-index: 99;
+  }
+  .progress-bar-outer {
+    flex: 1;
+    height: 8px;
+    background: #e0ddd0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--green), #5aaa5e);
+    border-radius: 4px;
+    transition: width .4s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ===== MAIN ===== */
+  main { padding: 12px 12px 80px; max-width: 520px; margin: 0 auto; }
+
+  /* ===== ROUTE MAP SVG ===== */
+  .map-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .map-section h2 {
+    font-size: 13px;
+    color: var(--green);
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .map-svg-wrap { overflow-x: auto; }
+  .map-svg-wrap svg { display: block; margin: 0 auto; }
+
+  /* ===== CP CARD ===== */
+  .cp-card {
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(0,0,0,.10);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .cp-card:active { transform: scale(.98); }
+
+  .cp-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cp-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .cp-title { flex: 1; }
+  .cp-title .cp-name { font-size: 14px; font-weight: 700; color: white; line-height: 1.3; }
+  .cp-title .cp-sub  { font-size: 11px; color: rgba(255,255,255,.85); margin-top: 2px; }
+  .cp-check {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: background .2s, border-color .2s;
+  }
+  .cp-check.done { background: white; border-color: white; }
+
+  .cp-body {
+    background: white;
+    padding: 0 14px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .3s ease, padding .3s;
+  }
+  .cp-body.open { max-height: 400px; padding: 12px 14px; }
+
+  .cp-body p { font-size: 13px; line-height: 1.7; color: #333; }
+  .cp-body .alert-box {
+    margin-top: 10px;
+    background: #fff0cc;
+    border: 1.5px solid var(--gold);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #7a3800;
+    line-height: 1.5;
+  }
+  .cp-body .landmark-box {
+    margin-top: 8px;
+    background: #f5f5f0;
+    border: 1px dashed #bbb;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  /* チェック済みスタイル */
+  .cp-card.checked .cp-header { opacity: .75; }
+  .cp-card.checked .cp-body { background: #fafaf8; }
+
+  /* ===== 距離バッジ ===== */
+  .dist-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    padding: 5px 14px;
+    margin: 4px auto 10px;
+    font-size: 12px;
+    color: #7a5000;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  /* ===== GOAL ===== */
+  .goal-card {
+    border-radius: var(--radius);
+    background: var(--goal);
+    padding: 20px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 2px 8px rgba(232,125,46,.35);
+    margin-bottom: 16px;
+  }
+  .goal-card .goal-emoji { font-size: 36px; display: block; margin-bottom: 6px; }
+  .goal-card h2 { font-size: 20px; font-weight: 700; }
+  .goal-card p  { font-size: 13px; opacity: .9; margin-top: 4px; }
+
+  /* ===== 早見表 ===== */
+  .table-section {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    margin-bottom: 16px;
+  }
+  .table-section h2 {
+    background: var(--green);
+    color: white;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #e8f2e0; color: var(--green); padding: 7px 8px; font-weight: 700; text-align: left; border-bottom: 2px solid #c0d8b0; }
+  td { padding: 7px 8px; border-bottom: 1px solid #eee; vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafaf8; }
+  .alert-row td { color: #c02010; font-weight: 700; }
+  .goal-row td { color: var(--goal); font-weight: 700; }
+
+  /* ===== FOOTER ===== */
+  .footer-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--green);
+    color: white;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 12px;
+    z-index: 100;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.2);
+  }
+  .footer-bar span { font-weight: 700; }
+
+  /* ===== COLOR THEMES ===== */
+  .t-start   { background: var(--blue); }
+  .t-shop    { background: var(--orange); }
+  .t-turn    { background: var(--red); }
+  .t-pink    { background: var(--pink); }
+  .t-purple  { background: var(--purple); }
+  .t-gray    { background: var(--gray); }
+  .t-station { background: var(--dkgreen); }
+  .t-park    { background: #5a9e3c; }
+  .t-goal    { background: var(--goal); }
+
+  .bg-start   { background: var(--blue-light); }
+  .bg-shop    { background: var(--orange-light); }
+  .bg-turn    { background: var(--red-light); }
+  .bg-pink    { background: var(--pink-light); }
+  .bg-purple  { background: var(--purple-light); }
+  .bg-gray    { background: var(--gray-light); }
+  .bg-station { background: var(--dkgreen-lt); }
+  .bg-park    { background: var(--green-light); }
+
+  /* ===== リセットボタン ===== */
+  .reset-btn {
+    display: block;
+    margin: 0 auto 20px;
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 20px;
+    padding: 8px 24px;
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .reset-btn:active { background: #f0f0f0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🗺 くぬぎ山駅 → 市川動植物園</h1>
+  <p>チェックポイントを確認しながら楽しく歩こう！　約2.8km・約40〜50分</p>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-bar-outer">
+    <div class="progress-bar-inner" id="progressBar"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0 / 11</div>
+</div>
+
+<main>
+
+  <!-- ===== 簡易ルートMAP ===== -->
+  <div class="map-section">
+    <h2>📍 ルート全体図</h2>
+    <div class="map-svg-wrap">
+      <svg width="320" height="600" viewBox="0 0 320 600" role="img">
+        <title>くぬぎ山駅から市川動植物園 ルート概略図</title>
+        <!-- 背景 -->
+        <rect width="320" height="600" fill="#f7f5ee"/>
+        <!-- 梨畑 -->
+        <rect x="160" y="10" width="150" height="180" rx="6" fill="#e8f2d8" opacity=".7"/>
+        <text x="235" y="30" text-anchor="middle" font-size="9" fill="#5a7a30">🍐 梨畑エリア</text>
+        <!-- 大町公園 -->
+        <rect x="160" y="430" width="150" height="160" rx="6" fill="#d0ebcc" opacity=".7"/>
+        <text x="235" y="450" text-anchor="middle" font-size="9" fill="#2e6a14">🌳 大町公園</text>
+        <!-- 464号線 -->
+        <rect x="58" y="10" width="28" height="430" fill="#d4cfc2"/>
+        <line x1="72" y1="10" x2="72" y2="440" stroke="#e8c040" stroke-width="1.2" stroke-dasharray="8,5"/>
+        <text x="44" y="230" font-size="8" fill="#888" text-anchor="middle" transform="rotate(-90,44,230)">国道464号線</text>
+        <!-- 横道 -->
+        <rect x="58" y="432" width="180" height="20" fill="#d4cfc2"/>
+        <line x1="70" y1="442" x2="236" y2="442" stroke="#e8c040" stroke-width="1" stroke-dasharray="6,4"/>
+        <!-- 遊歩道 -->
+        <line x1="238" y1="442" x2="238" y2="572" stroke="#4a9e30" stroke-width="4" stroke-dasharray="8,4" stroke-linecap="round"/>
+        <!-- 進行矢印 -->
+        <polygon points="72,75 68,65 76,65" fill="#888"/>
+        <polygon points="72,195 68,185 76,185" fill="#888"/>
+        <polygon points="72,345 68,335 76,335" fill="#888"/>
+        <polygon points="160,442 150,438 150,446" fill="#888"/>
+        <!-- CP丸 -->
+        <circle cx="72" cy="50"  r="9" fill="#4a7fc1"/>
+        <circle cx="72" cy="92"  r="7" fill="#e07830"/>
+        <circle cx="72" cy="128" r="9" fill="#d63d2a"/>
+        <circle cx="72" cy="200" r="7" fill="#c060a0"/>
+        <circle cx="72" cy="228" r="7" fill="#9060c0"/>
+        <circle cx="72" cy="252" r="7" fill="#d63d2a"/>
+        <circle cx="72" cy="320" r="7" fill="#e07830"/>
+        <circle cx="72" cy="354" r="7" fill="#777"/>
+        <circle cx="72" cy="390" r="9" fill="#2e8b57"/>
+        <circle cx="72" cy="442" r="9" fill="#d63d2a"/>
+        <circle cx="238" cy="442" r="9" fill="#5a9e3c"/>
+        <!-- CP番号 -->
+        <text x="72" y="54"  text-anchor="middle" font-size="8" fill="white" font-weight="700">①</text>
+        <text x="72" y="96"  text-anchor="middle" font-size="7" fill="white" font-weight="700">②</text>
+        <text x="72" y="132" text-anchor="middle" font-size="8" fill="white" font-weight="700">③</text>
+        <text x="72" y="204" text-anchor="middle" font-size="7" fill="white" font-weight="700">④</text>
+        <text x="72" y="232" text-anchor="middle" font-size="7" fill="white" font-weight="700">⑤</text>
+        <text x="72" y="256" text-anchor="middle" font-size="7" fill="white" font-weight="700">⑥</text>
+        <text x="72" y="324" text-anchor="middle" font-size="7" fill="white" font-weight="700">⑦</text>
+        <text x="72" y="358" text-anchor="middle" font-size="7" fill="white" font-weight="700">⑧</text>
+        <text x="72" y="394" text-anchor="middle" font-size="8" fill="white" font-weight="700">⑨</text>
+        <text x="72" y="446" text-anchor="middle" font-size="8" fill="white" font-weight="700">⑩</text>
+        <text x="238" y="446" text-anchor="middle" font-size="8" fill="white" font-weight="700">⑪</text>
+        <!-- ラベル -->
+        <text x="90" y="54"  font-size="9" fill="#1a4d8f" font-weight="700">くぬぎ山駅 東口</text>
+        <text x="88" y="96"  font-size="8" fill="#7a4500">田中（八百屋）</text>
+        <text x="88" y="128" font-size="9" fill="#8b1a0a" font-weight="700">麺屋 木蓮 ★右折</text>
+        <text x="88" y="196" font-size="8" fill="#7a0060">カフェひらおか</text>
+        <text x="88" y="228" font-size="8" fill="#5a1090">オランダ屋</text>
+        <text x="88" y="248" font-size="8" fill="#8b1a0a">セブン ★横断</text>
+        <text x="88" y="316" font-size="8" fill="#7a4500">夢庵・串崎新田交差点</text>
+        <text x="88" y="350" font-size="8" fill="#555">ともえ</text>
+        <text x="88" y="386" font-size="9" fill="#1a5c36" font-weight="700">大町駅</text>
+        <text x="88" y="438" font-size="9" fill="#8b1a0a" font-weight="700">★左折</text>
+        <text x="252" y="438" font-size="8" fill="#2e5c1a">遊歩道入口</text>
+        <!-- 距離ラベル小 -->
+        <text x="88" y="108" font-size="7" fill="#9a7020">60m↓</text>
+        <text x="88" y="160" font-size="7" fill="#9a7020">160m↓</text>
+        <text x="88" y="280" font-size="7" fill="#9a7020">300m↓</text>
+        <text x="88" y="370" font-size="7" fill="#9a7020">100m↓</text>
+        <text x="88" y="406" font-size="7" fill="#9a7020">200m↓</text>
+        <!-- ゴール -->
+        <rect x="168" y="498" width="130" height="60" rx="8" fill="#fff3e0" stroke="#e87d2e" stroke-width="2"/>
+        <polygon points="166,508 233,485 302,508" fill="#e87d2e" opacity=".85"/>
+        <text x="233" y="534" text-anchor="middle" font-size="11" fill="#7a3500" font-weight="700">🦁 市川動植物園</text>
+        <text x="233" y="550" text-anchor="middle" font-size="9" fill="#7a3500">ゴール！🎉</text>
+        <!-- 遊歩道距離 -->
+        <text x="253" y="510" font-size="8" fill="#2e6a14">1.3km</text>
+        <text x="253" y="522" font-size="8" fill="#2e6a14">約17分</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ===== チェックポイント ===== -->
+
+  <!-- ① -->
+  <div class="cp-card t-start" id="cp1">
+    <div class="cp-header t-start" onclick="toggleCP(1)">
+      <div class="cp-num">①</div>
+      <div class="cp-title">
+        <div class="cp-name">🚉 くぬぎ山駅　東口</div>
+        <div class="cp-sub">スタート！</div>
+      </div>
+      <div class="cp-check" id="chk1" onclick="checkCP(event,1)"></div>
+    </div>
+    <div class="cp-body bg-start" id="body1">
+      <p>改札を出たら <strong>東口（ひがしぐち）</strong> から外へ！<br>⚠️ 西口と間違えないように注意。<br>出たらそのまま東（まっすぐ右）の方向へ歩く。</p>
+    </div>
+  </div>
+  <div class="dist-badge">📏 東口から東へ 約60m（すぐ！）</div>
+
+  <!-- ② -->
+  <div class="cp-card" id="cp2">
+    <div class="cp-header t-shop" onclick="toggleCP(2)">
+      <div class="cp-num">②</div>
+      <div class="cp-title">
+        <div class="cp-name">🥦 自家製直売　田中（八百屋）</div>
+        <div class="cp-sub">東口から約60m・道沿い右手</div>
+      </div>
+      <div class="cp-check" id="chk2" onclick="checkCP(event,2)"></div>
+    </div>
+    <div class="cp-body bg-shop" id="body2">
+      <p>東口を出てすぐ右手にある八百屋さん。<br>新鮮な野菜が並んでいるよ🥕<br>ここを過ぎたらあと少しで大通り！</p>
+    </div>
+  </div>
+  <div class="dist-badge">📏 さらに東へ 約40m → 大通り（464号線）に出る</div>
+
+  <!-- ③ -->
+  <div class="cp-card" id="cp3">
+    <div class="cp-header t-turn" onclick="toggleCP(3)">
+      <div class="cp-num">③</div>
+      <div class="cp-title">
+        <div class="cp-name">🍜 麺屋　木蓮（ラーメン）</div>
+        <div class="cp-sub">464号線に出たすぐそこ</div>
+      </div>
+      <div class="cp-check" id="chk3" onclick="checkCP(event,3)"></div>
+    </div>
+    <div class="cp-body bg-turn" id="body3">
+      <p>国道464号線（大通り）に出たすぐのところ！<br>いい匂いがするよ🍜<br>東口から合計 <strong>約100m・約2分</strong>。</p>
+      <div class="alert-box">★ ここで 右に曲がる！→ 大通りを南（みなみ）へ進む</div>
+    </div>
+  </div>
+  <div class="dist-badge">📏 右折して464号線を南へ 約160m → カフェひらおか</div>
+
+  <!-- ④⑤⑥ まとめカード -->
+  <div class="cp-card" id="cp4">
+    <div class="cp-header t-pink" onclick="toggleCP(4)">
+      <div class="cp-num" style="font-size:10px;">④⑤⑥</div>
+      <div class="cp-title">
+        <div class="cp-name">3軒が並んでいる！</div>
+        <div class="cp-sub">カフェひらおか・オランダ屋・セブン</div>
+      </div>
+      <div class="cp-check" id="chk4" onclick="checkCP(event,4)"></div>
+    </div>
+    <div class="cp-body bg-pink" id="body4">
+      <p>
+        <strong>🍓 ④ カフェテラスひらおか</strong><br>
+        464号線沿い右手！ピンクのかわいいカフェ🍓<br>
+        いちごパフェが人気！木蓮から約160m。<br><br>
+        <strong>🏠 ⑤ オランダ屋</strong><br>
+        ひらおかカフェのすぐ隣！<br><br>
+        <strong>🏪 ⑥ セブンイレブン</strong><br>
+        オランダ屋のすぐ隣！飲み物・おやつ補充はここで🥤
+      </p>
+      <div class="alert-box">★ セブンの横断歩道を渡って 左側（東側）を歩くようにしよう！</div>
+    </div>
+  </div>
+  <div class="dist-badge">📏 左側通行で南へ 約300m → 夢庵・串崎新田交差点</div>
+
+  <!-- ⑦ -->
+  <div class="cp-card" id="cp5">
+    <div class="cp-header t-shop" onclick="toggleCP(5)">
+      <div class="cp-num">⑦</div>
+      <div class="cp-title">
+        <div class="cp-name">🍱 夢庵・串崎新田交差点</div>
+        <div class="cp-sub">セブンから約300m</div>
+      </div>
+      <div class="cp-check" id="chk5" onclick="checkCP(event,5)"></div>
+    </div>
+    <div class="cp-body bg-shop" id="body5">
+      <p>左手（東側）にファミレス「<strong>夢庵</strong>」が見えたら交差点！<br>「<strong>串崎新田（くしざきしんでん）交差点</strong>」を渡って、そのまま南へ進む。</p>
+    </div>
+  </div>
+  <div class="dist-badge">📏 南へ 約100m → ともえ</div>
+
+  <!-- ⑧ -->
+  <div class="cp-card" id="cp6">
+    <div class="cp-header t-gray" onclick="toggleCP(6)">
+      <div class="cp-num">⑧</div>
+      <div class="cp-title">
+        <div class="cp-name">🎰 左手に「ともえ」</div>
+        <div class="cp-sub">夢庵から約100m・大町駅まであと少し！</div>
+      </div>
+      <div class="cp-check" id="chk6" onclick="checkCP(event,6)"></div>
+    </div>
+    <div class="cp-body bg-gray" id="body6">
+      <p>左手（東側）にパチンコ店「<strong>ともえ</strong>」が見えてくる。<br>大町駅まであと少し！もうひと頑張り💪</p>
+    </div>
+  </div>
+  <div class="dist-badge">📏 南へ 約100m → 大町駅</div>
+
+  <!-- ⑨ -->
+  <div class="cp-card" id="cp7">
+    <div class="cp-header t-station" onclick="toggleCP(7)">
+      <div class="cp-num">⑨</div>
+      <div class="cp-title">
+        <div class="cp-name">🚉 大町駅（北総線）</div>
+        <div class="cp-sub">右手にバス乗り場あり　休憩ポイント🎉</div>
+      </div>
+      <div class="cp-check" id="chk7" onclick="checkCP(event,7)"></div>
+    </div>
+    <div class="cp-body bg-station" id="body7">
+      <p>右手（西側）に北総線の<strong>大町駅</strong>が見える。<br>右手に<strong>バス乗り場</strong>あり。<br>ここまで合計 <strong>約770m！</strong><br>疲れたらここで一息ついても大丈夫🎉</p>
+    </div>
+  </div>
+  <div class="dist-badge">📏 大町駅から南へ 約200m → 信号・左折ポイント</div>
+
+  <!-- ⑩ -->
+  <div class="cp-card" id="cp8">
+    <div class="cp-header t-turn" onclick="toggleCP(8)">
+      <div class="cp-num">⑩</div>
+      <div class="cp-title">
+        <div class="cp-name">🚦 信号を左に曲がる！</div>
+        <div class="cp-sub">大町駅から約200m南の信号</div>
+      </div>
+      <div class="cp-check" id="chk8" onclick="checkCP(event,8)"></div>
+    </div>
+    <div class="cp-body bg-turn" id="body8">
+      <p>信号のある交差点を<strong>左折（東の方向へ）</strong>！</p>
+      <div class="landmark-box">
+        📸 <strong>目印の看板</strong><br>
+        「市川市 <strong>動植物園 ←</strong>」（青い看板）<br>
+        「<strong>ありのみコース ←</strong>」（緑の看板）<br>
+        上に「CAFE KANBE（勧兵衛）」の緑色の大きな看板
+      </div>
+      <div class="alert-box">★ この看板が見えたら左折！これが目印！</div>
+    </div>
+  </div>
+  <div class="dist-badge">📏 左折後、東へ 約300m → 大町公園 遊歩道入口</div>
+
+  <!-- ⑪ -->
+  <div class="cp-card" id="cp9">
+    <div class="cp-header t-park" onclick="toggleCP(9)">
+      <div class="cp-num">⑪</div>
+      <div class="cp-title">
+        <div class="cp-name">🌳 大町公園　遊歩道の入口</div>
+        <div class="cp-sub">左折から約300m・白い石柱が目印</div>
+      </div>
+      <div class="cp-check" id="chk9" onclick="checkCP(event,9)"></div>
+    </div>
+    <div class="cp-body bg-park" id="body9">
+      <p>右手に「<strong>大町公園</strong>」の白い縦長の石柱看板が見えたら入口！<br>緑のフェンスが続く、木々がいっぱいの自然の入口🌿<br><br>遊歩道に入ってまっすぐ歩こう。<br><strong>約1.3km・約17分</strong>でゴール！</p>
+      <div class="landmark-box">
+        📸 道路脇に「大 大町 公園」と書かれた白い縦長の石柱。<br>緑のフェンスが続いて、右手に木々がいっぱい。
+      </div>
+    </div>
+  </div>
+  <div class="dist-badge">📏 遊歩道を 約1.3km（約17分）歩く🌿</div>
+
+  <!-- ゴール -->
+  <div class="goal-card" id="cp10">
+    <span class="goal-emoji">🦁</span>
+    <h2>市川動植物園　到着！</h2>
+    <p>おつかれさまでした🎉<br>全部で約2.8km、チェックポイント11か所 制覇！<br>動物たちに会いに行こう！</p>
+  </div>
+
+  <!-- ===== 早見表 ===== -->
+  <div class="table-section">
+    <h2>📋 チェックポイント早見表</h2>
+    <table>
+      <tr><th>No.</th><th>場所・目印</th><th>ポイント</th><th>累計</th></tr>
+      <tr><td>①</td><td>くぬぎ山駅 東口</td><td>スタート！東へ</td><td>—</td></tr>
+      <tr><td>②</td><td>田中（八百屋）</td><td>右手 新鮮野菜</td><td>60m</td></tr>
+      <tr class="alert-row"><td>③★</td><td>麺屋 木蓮</td><td>右折→南へ！</td><td>100m</td></tr>
+      <tr><td>④</td><td>カフェひらおか</td><td>いちごカフェ 右手</td><td>260m</td></tr>
+      <tr><td>⑤</td><td>オランダ屋</td><td>ひらおかの隣</td><td>270m</td></tr>
+      <tr class="alert-row"><td>⑥★</td><td>セブンイレブン</td><td>横断→左側へ！</td><td>270m</td></tr>
+      <tr><td>⑦</td><td>夢庵・串崎新田</td><td>交差点を渡る</td><td>570m</td></tr>
+      <tr><td>⑧</td><td>ともえ（左手）</td><td>大町駅まであと少し</td><td>670m</td></tr>
+      <tr><td>⑨</td><td>大町駅</td><td>右手バス乗り場🎉</td><td>770m</td></tr>
+      <tr class="alert-row"><td>⑩★</td><td>動植物園看板</td><td>左折！東へ</td><td>970m</td></tr>
+      <tr><td>⑪</td><td>大町公園 遊歩道</td><td>白い石柱が目印</td><td>1.27km</td></tr>
+      <tr class="goal-row"><td>🎉</td><td>市川動植物園</td><td>ゴール！</td><td>約2.57km</td></tr>
+    </table>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">🔄 チェックをリセットする</button>
+
+</main>
+
+<div class="footer-bar">
+  🚶 合計 約2.8km・約40〜50分　<span id="footerCheck">0/11 チェック済み</span>
+</div>
+
+<script>
+  const TOTAL = 11;
+  let checked = JSON.parse(localStorage.getItem('cp_checked') || '[]');
+
+  function save() { localStorage.setItem('cp_checked', JSON.stringify(checked)); }
+
+  function updateProgress() {
+    const n = checked.length;
+    document.getElementById('progressBar').style.width = (n / TOTAL * 100) + '%';
+    document.getElementById('progressLabel').textContent = n + ' / ' + TOTAL;
+    document.getElementById('footerCheck').textContent = n + '/' + TOTAL + ' チェック済み';
+  }
+
+  function applyChecked() {
+    for (let i = 1; i <= TOTAL; i++) {
+      const card = document.getElementById('cp' + i);
+      const chk  = document.getElementById('chk' + i);
+      if (!card || !chk) continue;
+      if (checked.includes(i)) {
+        card.classList.add('checked');
+        chk.textContent = '✓';
+        chk.classList.add('done');
+      } else {
+        card.classList.remove('checked');
+        chk.textContent = '';
+        chk.classList.remove('done');
+      }
+    }
+    updateProgress();
+  }
+
+  function checkCP(e, n) {
+    e.stopPropagation();
+    if (checked.includes(n)) {
+      checked = checked.filter(x => x !== n);
+    } else {
+      checked.push(n);
+    }
+    save();
+    applyChecked();
+  }
+
+  function toggleCP(n) {
+    const body = document.getElementById('body' + n);
+    if (body) body.classList.toggle('open');
+  }
+
+  function resetAll() {
+    if (confirm('チェックをすべてリセットしますか？')) {
+      checked = [];
+      save();
+      applyChecked();
+    }
+  }
+
+  applyChecked();
+</script>
+</body>
+</html>
